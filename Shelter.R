@@ -5,6 +5,7 @@ library(caret)
 library(tidyr)
 library(stringr)
 library(randomForest)
+library(ggthemes)
 
 ### Load and merge
 
@@ -68,8 +69,6 @@ combined %>%
           ifelse(hour >= 12 & hour <= 17, "Midday", 
           ifelse(hour >= 18 & hour <= 23, "Evening", "Early Morning")))
   )
-
-#
 
 # Separate SexuponOutcome Sex and Status (intact, sprayed, etc)
 combined <-
@@ -140,6 +139,7 @@ combined %>%
     HasName = ifelse(!is.na(Name), 1, 0)
   )
   
+
 # Clean up data 
 combined <-
 combined %>%
@@ -154,9 +154,7 @@ combined$Colorful <- as.factor(combined$Colorful)
 combined$Adult <- as.factor(combined$Adult)
 combined$LongStay <- as.factor(combined$LongStay)
 
-### Random forest
-
-# Testing data 
+# Create testing data 
 training <-
 combined %>%
   filter(!is.na(OutcomeType))
@@ -164,6 +162,53 @@ combined %>%
 # Remove NAs from Adult column (or fill in with prediction model)
 training <- training %>%
   filter(!is.na(Adult))
+
+### Visualizations 
+
+# Animals and their outcomes
+ggplot(training, aes(x = OutcomeType, fill = AnimalType)) +
+  geom_bar(position = "fill") +
+  theme_few() +
+  scale_fill_few() +
+  ggtitle("Animals type and outcomes") + 
+  xlab("") +
+  ylab("") +
+  guides(fill = guide_legend(reverse=TRUE))
+
+# Formula to do graphs
+plotby <- function(feat){
+  ggplot(training, aes(x = OutcomeType, fill = AnimalType)) +
+    geom_bar(position = "fill") +
+    facet_wrap(feat) +
+    theme_few() +
+    scale_fill_few() +
+    ggtitle("Animals type and outcomes age") + 
+    xlab("") +
+    ylab("") +
+    guides(fill = guide_legend(reverse=TRUE)) +
+    theme(axis.text.x  = element_text(angle=90))
+}
+
+# Animals and outcomes based on if they are puppy or adult
+
+plotby(~Adult)
+
+
+# By OutcomeSubTypes
+plotby(~OutcomeSubTypes)
+
+# By year
+plotby(~Year)
+
+# By month
+plotby(~Month)
+
+# By others
+plotby(~Mix)
+plotby(~Sex)
+plotby(~LongStay)
+
+### Random forest
 
 slice <- createDataPartition(training$OutcomeType, p = .9, list = FALSE)
 training <- training[slice,]
